@@ -1,0 +1,216 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{color,soul}
+\usepackage{amsmath} % for logic descriptions
+\usepackage{geometry}
+
+% Adjusted margins for better readability
+\geometry{a4paper, margin=1in}
+
+\title{Smart Intrusion Detection \& Access Control System}
+\author{Helinä, Jenna, Pinja, Jessica, Fahad}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+This project introduces the concept and implementation of Smart Intrusion Detection and Access Control System based on the Raspberry Pi Pico W for motion sensing, secure remote authentication and physical access control. The system uses the End-to-End IoT architecture to process sensor data at the edge to determine the presence of unauthorized access, and communicate via the MQTT protocol to a custom mobile application. Key features include: signal debouncing based on software, asynchronous multi-tasking to simultaneously run web and sensor, and logic based security lockout mechanism. Intrusion detection and access control are important components of the modern smart security infrastructure and the goal of the project is to design an IoT system that can be used to monitor secure zones for intrusion and remote physical access control. Typical use cases are small rooms, labs or meeting spaces, where the system could be used to track the occupancy and send alarms to users when a the configurable capacity limit is exceeded.
+
+\subsection{Functionalities}The project implements the following mandatory functionalities:
+
+\begin{enumerate}
+\item \textbf{Sensor Data Collection:}
+	\begin{itemize}
+	\item (\hl{\textit{Collect data from sensors with the Raspberry Pi Pico W.}})
+	\end{itemize}
+    The system continuously collects binary environmental data using a \textbf{Passive Infrared (PIR)} sensor connected to the GPIO pins of the Raspberry Pi Pico W. It detects infrared changes caused by human movement. The signal is digitally read and software-debounced to prevent false triggers.
+\item \textbf{Data Processing:}
+	\begin{itemize}
+	\item \hl{\textit{Implement data processing on the Pico W.}}
+	\end{itemize}
+    The Raspberry Pi Pico W serves as the edge computing node, responsible for several key functions. It filters sensor noise using a debouncing algorithm and processes incoming MQTT control messages for user PIN authentication.
+    A state machine manages four system states: 
+    \begin{itemize}
+        \item {Secure:} Idle monitoring
+        \item {Access Granted:} Door unlocked
+        \item {Alarm Activated:} Intrusion detected
+        \item {Lockout:} System locked after three failed attempts
+    \end{itemize}
+    Authentication attempts are tracked, and if the threshold is exceeded, the system triggers an intrusion alarm and enters a lockout state. Motion event timestamps are debounced to prevent duplicate counts caused by sustained motion.
+
+\item \textbf{Output Control:}
+	\begin{itemize}
+	\item \hl{Control output devices based on processed sensor data.}
+	\item \hl{Result can be displayed with, e.g.,  LED, OLED, or Android/IOS App.}
+	\end{itemize}
+    
+    \begin{itemize}
+	\item A servo motor actuates the door lock mechanism, rotating between locked (0°) and unlocked (90°) positions.
+	\item An active buzzer provides audible feedback: a short beep for motion detection, a welcome beep for successful access, and continuous alarm beeps for intrusion.
+	\item A LCD display shows real-time system status.
+	\item A local web dashboard displays visitor count and system status.
+	\end{itemize}
+\end{enumerate}
+
+\noindent
+\subsection{Advanced Functionalities:}
+Further, the project implements the following advanced functionalities:
+\begin{enumerate}
+\item \textbf{Wireless Connectivity:}
+	\begin{itemize}
+	\item The Pico W connects to a local Wi-Fi network (2.4 GHz) using its onboard CYW43439 wireless chip.
+	\item MQTT protocol is used for bidirectional communication between the device and cloud broker.
+	\item The device publishes visitor counts and alarm events to \texttt{iot/motion} and \texttt{iot/alarm} topics.
+	\item The device subscribes to \texttt{iot/control} to receive PIN commands and administrative controls from remote users.
+	\end{itemize}
+\item \textbf{Mobile App:}
+	\begin{itemize}
+	\item A custom Android application (developed via MIT App Inventor) serves as the user interface, allowing real-time monitoring and remote PIN code entry.
+	\end{itemize}
+\item \textbf{Cloud integration:}
+	\begin{itemize}
+	\item The system uses a cloud-based MQTT broker (HiveMQ Cloud) as the central message hub.
+	\item The architecture supports integration with InfluxDB time-series database for persistent storage of motion events and alarm logs. \hl{(demonstrated in Exercise 5)}
+	\item Grafana dashboards can visualize historical patterns, peak entry times, and intrusion frequency. \hl{(optional extension)}
+	\end{itemize}
+\item \textbf{Security:}
+	\begin{itemize}
+	\item All MQTT communication is encrypted using TLS 1.2 (Transport Layer Security).
+	\item The Pico W establishes an SSL context with the broker using the \texttt{ssl} module in MicroPython.
+	\item User credentials (MQTT username/password) are stored in a separate \texttt{config.py} file excluded from version control.
+	\item PIN authentication mechanism prevents unauthorized access; after 3 failed attempts, the system enters lockout mode requiring an admin \texttt{UNLOCK} command.
+	\end{itemize}
+\end{enumerate}
+
+\subsection{Application Area:}
+The applicable areas of this system is perimeter security in smart buildings with special use in the case of University labs, small offices, and maker spaces. These environments can benefit from an inexpensive solution to intrusion detection and access control with Raspberry Pi Pico W to detect motion using the PIR sensor. The system also processes the data locally to ensure that the latency is kept to the minimum, sounding alarms and remote notifications whenever unauthorised motion is detected. Access control is controlled by a servo controlled lock which can be remotely controlled by a custom mobile application.
+\newline
+\break
+This solution makes use of MQTT- to attain secure communication with the cloud to provide the real-time monitoring and events log functionality. The system creates a flexible and scalable way of secure zones i.e. zones can be efficiently monitored and controlled in different environments by combining edge processing with remote management.
+
+\section{Architecture}
+The system follows a standard four-layer IoT architecture, ensuring separation of concerns between hardware control, networking, and data visualization.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{architecture_diagram.png}
+    \caption{System Architecture Diagram}
+    \label{fig:arch}
+\end{figure}
+
+\subsection{Sensing \& Actuation Layer}
+The physical layer consists of the \textbf{Raspberry Pi Pico W} microcontroller (RP2040). It interfaces with:
+\begin{itemize}
+    \item \textbf{Input:} A PIR Motion Sensor (HC-SR501) connected to GPIO 28. It outputs a digital HIGH signal when infrared changes are detected.
+    \item \textbf{Actuators:} 
+    \begin{itemize}
+        \item A standard Servo Motor (SG90) connected to GPIO 15 (PWM) controls the physical lock.
+        \item A generic Buzzer connected to GPIO 16 provides immediate local feedback.
+    \end{itemize} 
+    \item \textbf{Display:} A 16x2 LCD screen connected via the I2C bus (GPIO 0 SDA, GPIO 1 SCL) provides on-site status information.
+\end{itemize}
+
+\subsection{Networking Layer}
+The Networking Layer is responsible for reliable data transport. We utilized \textbf{Wi-Fi (802.11n)} provided by the Pico W's Infineon CYW43439 chip. 
+\begin{itemize}
+    \item \textbf{Protocol:} We selected \textbf{MQTT (Message Queuing Telemetry Transport)} over HTTP. As discussed in the course lectures, MQTT is ideal for constrained IoT devices because its header size is small (min 2 bytes), and its publish/subscribe model allows the mobile app to receive "push" notifications instantly without battery-draining polling.
+    \item \textbf{Broker:} We used \textbf{HiveMQ Cloud}, a public MQTT broker that supports SSL/TLS encryption, satisfying the security requirements of the project.
+\end{itemize}
+
+\subsection{Data Management Layer}
+Data generated by the system (e.g., "Motion Detected at 14:05") is processed and stored.
+\begin{itemize}
+    \item \textbf{Middleware:} \textbf{Node-RED} running on a local server subscribes to the MQTT topics. It processes the raw JSON payloads from the Pico W.
+    \item \textbf{Storage:} Processed data is written to \textbf{InfluxDB}, a time-series database optimized for timestamped sensor data (Data Warehouse model).
+\end{itemize}
+
+\subsection{Application Layer}
+The user interacts with the system through two primary interfaces:
+\begin{itemize}
+    \item \textbf{Mobile App:} Built with MIT App Inventor, this Android app allows users to authenticate (Access Control) and send "LOCK" or "UNLOCK" commands.
+    \item \textbf{Dashboard:} A \textbf{Grafana} dashboard connects to InfluxDB to visualize intrusion frequency and system uptime.
+\end{itemize}
+
+\section{Methods \& Tools}
+The implementation relies on \textbf{MicroPython} firmware, leveraging specific libraries to handle concurrency and hardware control.
+
+\subsection{Hardware Implementation}
+The \textbf{Raspberry Pi Pico W} was selected as the low-level controller due to its native Wi-Fi support. The PIR sensor was chosen for motion detection because of its energy efficiency and privacy-preserving nature (no images are captured). The hardware was assembled on a breadboard to allow for modular testing. The connections were verified against the Pico W pinout diagram.
+\begin{itemize}
+    \item{PIR Sensor:} VCC to 5V (VBUS), GND to GND, Output to GP28.
+    \item{Servo Motor:} VCC to 5V (VBUS), GND to GND, Signal to GP15.
+    \item{LCD Display:} VCC to 5V (VBUS), GND to GND, SDA to GP0, SCL to GP1.
+\end{itemize}
+
+\subsection{Software \& Data Processing}
+The firmware was developed in MicroPython using the Thonny IDE. To meet the "Complex Data Processing" requirement, the software architecture was evolved from a simple linear loop to an asynchronous multitasking model using the \texttt{uasyncio} library.
+
+\subsubsection{Asynchronous Multitasking}
+The main program runs three concurrent tasks:
+\begin{itemize}
+    \item \texttt{sensor\_loop()}: Polls the PIR sensor and handles debouncing.
+    \item \texttt{mqtt\_loop()}: Maintains the connection to the broker and checks for incoming messages.
+    \item \texttt{web\_server()}: Listens for HTTP requests in non-blocking mode.
+\end{itemize}
+
+\subsubsection{Edge Logic Algorithms}
+Two key algorithms are implemented directly on the microcontroller:
+
+{1. Signal Debouncing:}
+To prevent false positives from the PIR sensor hardware, a time-based filter is applied. A motion event is registered only if:
+\[ t_{current} - t_{last\_trigger} > 3.0 \text{ seconds} \]
+This ensures that a single person walking past is counted as one event rather than multiple sensor spikes.
+
+{2. Security \& Lockout Logic:}
+The system processes incoming MQTT payloads to verify credentials.
+\begin{itemize}
+    \item \textbf{Input:} Alphanumeric string received from Mobile App.
+    \item \textbf{Logic:} The string is compared against a hardcoded hash/password (e.g., "1995").
+    \item \textbf{State Machine:}
+    \begin{itemize}
+        \item \textit{Match:} Reset failure counter, unlock Servo, update LCD.
+        \item \textit{Mismatch:} Increment \texttt{failed\_attempts}.
+        \item \textit{Lockout:} If \texttt{failed\_attempts} $\ge$ 3, the system enters a "Lockout Mode," ignoring all input and sounding the buzzer for 60 seconds.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Reuse of Course Exercises}
+
+\begin{itemize}
+\item \textbf{Exercise 1:} MicroPython setup, GPIO configuration, I2C LCD driver integration.
+\item \textbf{Exercise 2:} Wi-Fi connection logic, HTTP server implementation.
+\item \textbf{Exercise 4-3:} MQTT publish-subscribe pattern, TLS setup, Node-RED integration for cloud-to-device control.
+\item \textbf{Exercise 5:} InfluxDB and Grafana integration for data visualization (architecture supports this, though not fully deployed in final demo).
+\end{itemize}
+
+\section{Evaluation}
+Provide here a detailed description of how you evaluated the application. Evaluate your implementation using selected criteria, for example:
+\begin{itemize}
+\item System throughput (e.g. number of messages).
+\item System latency (e.g., network and request processing latency.
+\end{itemize}
+Design two evaluation scenarios that you compare with each other, for example:
+\begin{itemize}
+\item Small number / large number of messages
+\item Small payload / big payload
+\end{itemize}
+
+
+\section{Results}
+
+Collect numerical data of test cases:
+\begin{itemize}
+\item Collecting logs of container operations
+\item Conduct simple analysis for documentation purposes (e.g. plots or graphs)
+\end{itemize}
+
+
+\section{Discussion}
+Discuss the results of the evaluation. What weaknesses does your application have? In what scenarions does it work well? Return back to the application area you described in Introduction -- put the results in context.
+
+
+\end{document}
