@@ -26,6 +26,8 @@
 
 \maketitle
 
+\end{center}
+
 \section{Introduction}
 This project introduces the concept and implementation of a Smart Intrusion Detection and Access Control System based on the Raspberry Pi Pico W for motion sensing, secure remote authentication, and physical access control simulation. The system uses the End-to-End IoT architecture to process sensor data at the edge to determine the presence of unauthorized access, and communicates via the MQTT protocol to a custom web application.
 
@@ -99,6 +101,8 @@ The applicable areas of this system are perimeter security in smart buildings wi
 
 This solution makes use of MQTT to attain secure communication with the cloud to provide the real-time monitoring and events log functionality. The system creates a flexible and scalable way of secure zones i.e., zones can be efficiently monitored and controlled in different environments by combining edge processing with remote management.
 
+\newpage
+
 \section{Architecture}
 The system follows a standard four-layer IoT architecture, ensuring separation of concerns between hardware control, networking, and data visualization.
 
@@ -164,7 +168,7 @@ The Raspberry Pi Pico W was selected as the low-level controller due to its nati
     \centering
     \includegraphics[width=0.8\textwidth]{wiring.jpg}
     \caption{Hardware Wiring Diagram}
-    \label{fig:arch}
+    \label{fig:wiring}
 \end{figure}
 
 \subsection{Software \& Data Processing}
@@ -224,6 +228,11 @@ Following the principles from Lecture 11, we implemented:
 \item{Exercise 4-3:} MQTT publish-subscribe pattern, TLS setup, Node-RED integration for cloud-to-device control.
 \item{Exercise 5:} InfluxDB and Grafana integration for data visualization (architecture supports this, though not fully deployed in final demo).
 \end{itemize}
+
+The complete source code for the firmware, configurations, and the Web Application implementation is publicly available on GitHub: 
+\begin{center}
+    \textbf{\url{https://github.com/jsorv/IoT-group-12}}
+\end{center}
 
 \section{Evaluation}
 To assess the performance and reliability of the implementation, we designed three specific evaluation scenarios focusing on reliability, latency, and logic validity.
