@@ -11,7 +11,7 @@
 \usepackage{amsmath}
 \usepackage{geometry}
 \usepackage{hyperref}
-\usepackage{tikz} % Added for drawing the diagram
+\usepackage{tikz}
 \usetikzlibrary{shapes, arrows.meta, positioning, fit, backgrounds, calc}
 
 % --- Page Setup ---
@@ -26,6 +26,8 @@
 
 \maketitle
 
+\begin{center}
+    \href{https://github.com/jsorv/IoT-group-12}{\textbf{Source Code on GitHub}}
 \end{center}
 
 \section{Introduction}
@@ -229,6 +231,7 @@ Following the principles from Lecture 11, we implemented:
 \item{Exercise 5:} InfluxDB and Grafana integration for data visualization (architecture supports this, though not fully deployed in final demo).
 \end{itemize}
 
+\subsection{Source Code}
 The complete source code for the firmware, configurations, and the Web Application implementation is publicly available on GitHub: 
 \begin{center}
     \textbf{\url{https://github.com/jsorv/IoT-group-12}}
@@ -246,7 +249,7 @@ To assess the performance and reliability of the implementation, we designed thr
 \textbf{Test Scenarios:}
 \begin{itemize}
 \item{Scenario A: Motion Detection Reliability.} A subject walked past the sensor at varying intervals (slow vs. rapid) to stress-test the debouncing logic.
-\item{Scenario B: End-to-End Latency.} We measured the time elapsed between sending the correct PIN code from the Web App and the visual confirmation on the LED strip.
+\item{Scenario B: End-to-End Latency.} We measured the time elapsed between sending the correct PIN code from the Web App (via 4G) and the visual confirmation on the LED strip.
 \item{Scenario C: Security Logic Verification.} An incorrect PIN was entered 3 consecutive times to verify if the edge logic correctly triggered the ``Lockout Mode'' and alarm.
 \end{itemize}
 
@@ -340,9 +343,11 @@ To verify that the web server remains responsive during high MQTT traffic:
 \item \textbf{Result:} PASS — No task starvation; \texttt{uasyncio} scheduler effectively shares CPU time.
 \end{itemize}
 
+\newpage
+
 \subsection{Functional Test Results}
 
-Six functional tests were conducted:
+Six functional tests were conducted, with results summarized in Table~\ref{tab:functional}.:
 
 \begin{table}[h]
 \centering
@@ -377,12 +382,5 @@ The modular design allows for easy expansion (e.g., adding magnetic door sensors
 \textbf{Weaknesses:} A limitation observed was the PIR sensor's inability to detect direction (Entry vs. Exit). Additionally, the system currently relies on an active internet connection for the Web App to function.
 
 \textbf{Context:} Compared to standard market solutions, this prototype offers a customizable and privacy-focused alternative that integrates multiple I/O peripherals into a single low-cost controller. This project provides a solid foundation for learning the principles of IoT and can be extended to a production-ready smart building security platform with additional features and hardening.
-
-\subsection{Source Code}
-The complete source code for the firmware, configurations, and the Web Application implementation is publicly available on GitHub: 
-\begin{center}
-    \url{https://github.com/jsorv/IoT-group-12}
-\end{center}
-
 
 \end{document}
